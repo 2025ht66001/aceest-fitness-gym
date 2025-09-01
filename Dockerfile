@@ -10,7 +10,7 @@ COPY test_ACEest_Fitness.py .
 
 # Run the unit tests. If tests fail command will 
 # exit with non zero code thus failing the build
-RUN python -m unittest test_ACEest_Fitness.py
+RUN python -m unittest -v test_ACEest_Fitness.py
 
 
 
