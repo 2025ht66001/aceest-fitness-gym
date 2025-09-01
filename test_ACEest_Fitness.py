@@ -1,4 +1,4 @@
-from prog1 import FitnessTrackerApp
+from ACEest_Fitness import FitnessTrackerApp
 
 import tkinter as tk
 import unittest
@@ -37,6 +37,16 @@ class TestFitnessTrackerApp(unittest.TestCase):
             self.assertEqual(self.app.workout_entry.get(), "")
             self.assertEqual(self.app.duration_entry.get(), "")
 
+    def test_add_workout_missing_input(self):
+        """Test adding a workout with missing input."""
+        self.app.workout_entry.insert(0, "Running")
+
+        with patch('tkinter.messagebox.showerror') as mock_error:
+            self.app.add_workout()
+            # Assert that no workout was added
+            self.assertEqual(len(self.app.workouts), 0)
+            # Assert that an error message was shown
+            mock_error.assert_called_with("Error", "Please enter both workout and duration.")
 
 if __name__ == '__main__':
     unittest.main()
