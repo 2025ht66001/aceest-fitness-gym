@@ -1,4 +1,4 @@
-name: Python CI/CD with Docker
+name: Build ACEest Fitness and Gym application
 
 on:
   push:
