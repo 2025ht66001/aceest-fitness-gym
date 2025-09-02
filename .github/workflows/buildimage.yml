@@ -53,5 +53,5 @@ jobs:
           IMAGE_TAG=${{ steps.get_version.outputs.tag }}
           # This command builds the final, small production image
           # It uses the default target of the Dockerfile (stage-1)
-          docker build -t your_dockerhub_username/fitness-tracker:$IMAGE_TAG .
-          docker push your_dockerhub_username/fitness-tracker:$IMAGE_TAG
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/fitness-tracker:$IMAGE_TAG .
+          docker push ${{ secrets.DOCKER_USERNAME }}/fitness-tracker:$IMAGE_TAG
