@@ -3,7 +3,6 @@ from ACEest_Fitness import FitnessTrackerApp
 import tkinter as tk
 import unittest
 from unittest.mock import patch
-from your_app_file import FitnessTrackerApp # Assuming the class is in a file named your_app_file.py
 
 class TestFitnessTrackerApp(unittest.TestCase):
     def setUp(self):
