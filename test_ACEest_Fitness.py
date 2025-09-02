@@ -7,47 +7,50 @@ from ACEest_Fitness import FitnessTrackerApp
 
 class TestFitnessTrackerApp(unittest.TestCase):
     def setUp(self):
-        """Set up a new Tkinter root and app instance for each test."""
-        # Mock the entire tkinter module to prevent it from creating a GUI window.
-        # The mock will simulate the behavior of tk.Tk() without needing a display.
+        """Set up a mock environment for each test."""
         self.root = MagicMock()
         self.app = FitnessTrackerApp(self.root)
 
     def tearDown(self):
-        """No need to destroy the root as it's a mock."""
+        """No need to destroy the mock root."""
         pass
 
     @patch('tkinter.messagebox.showinfo')
     def test_add_workout_success(self, mock_info):
         """Test adding a workout with valid input."""
-        self.app.workout_entry.insert(0, "Running")
-        self.app.duration_entry.insert(0, "30")
+        # Correctly mock the entry widget's get() method to return a specific value.
+        self.app.workout_entry.get.return_value = "Running"
+        self.app.duration_entry.get.return_value = "30"
 
         self.app.add_workout()
-
+        
         self.assertEqual(len(self.app.workouts), 1)
         self.assertEqual(self.app.workouts[0]["workout"], "Running")
         self.assertEqual(self.app.workouts[0]["duration"], 30)
-
+        
         mock_info.assert_called_with("Success", "'Running' added successfully!")
-        self.assertEqual(self.app.workout_entry.get(), "")
-        self.assertEqual(self.app.duration_entry.get(), "")
+
+        # Assert that the delete method was called on the mock entry widgets.
+        self.app.workout_entry.delete.assert_called_with(0, tk.END)
+        self.app.duration_entry.delete.assert_called_with(0, tk.END)
 
     @patch('tkinter.messagebox.showerror')
     def test_add_workout_missing_input(self, mock_error):
         """Test adding a workout with missing input."""
-        self.app.workout_entry.insert(0, "Running")
+        self.app.workout_entry.get.return_value = ""
+        self.app.duration_entry.get.return_value = "30"
 
         self.app.add_workout()
 
         self.assertEqual(len(self.app.workouts), 0)
         mock_error.assert_called_with("Error", "Please enter both workout and duration.")
-
+        
     @patch('tkinter.messagebox.showerror')
-    def test_add_workout_invalid_duration(self, mock_error):
+    @patch('tkinter.messagebox.showinfo') # Still needed to prevent Tkinter from trying to create a messagebox
+    def test_add_workout_invalid_duration(self, mock_info, mock_error):
         """Test adding a workout with a non-numeric duration."""
-        self.app.workout_entry.insert(0, "Running")
-        self.app.duration_entry.insert(0, "thirty")
+        self.app.workout_entry.get.return_value = "Running"
+        self.app.duration_entry.get.return_value = "thirty"
 
         self.app.add_workout()
         self.assertEqual(len(self.app.workouts), 0)
