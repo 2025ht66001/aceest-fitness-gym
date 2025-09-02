@@ -1,18 +1,21 @@
 import unittest
-import tkinter as tk
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from ACEest_Fitness import FitnessTrackerApp
 
 class TestFitnessTrackerApp(unittest.TestCase):
 
     def setUp(self):
-        # Create a mock Tkinter root window for the tests
-        self.root = tk.Tk()
-        self.app = FitnessTrackerApp(self.root)
+        # We need to mock the Tkinter Tk object to prevent it from trying to create a GUI
+        # This patch will replace the tk.Tk class with a Mock object
+        self.patcher = patch('tkinter.Tk')
+        self.MockTk = self.patcher.start()
+        
+        # Instantiate the app with the mocked Tk object
+        self.app = FitnessTrackerApp(self.MockTk())
 
     def tearDown(self):
-        # Clean up the mock window after each test
-        self.root.destroy()
+        # Stop the patcher to restore the original Tk class
+        self.patcher.stop()
 
     def test_add_workout_success(self):
         """Test adding a workout with valid input."""
