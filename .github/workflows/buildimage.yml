@@ -8,6 +8,8 @@ on:
 jobs:
   build_and_test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # To create git tags
 
     steps:
       - name: Checkout code
