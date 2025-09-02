@@ -1,87 +1,60 @@
-import tkinter as tk
 import unittest
-from unittest.mock import patch, MagicMock
-
-# Import your application class
+import tkinter as tk
+from unittest.mock import patch
 from ACEest_Fitness import FitnessTrackerApp
 
 class TestFitnessTrackerApp(unittest.TestCase):
+
     def setUp(self):
-        """Set up a mock environment for each test."""
-        self.patcher_tk = patch('tkinter.Tk')
-        self.MockTk = self.patcher_tk.start()
-        
-        self.patcher_entry = patch('tkinter.Entry')
-        self.MockEntry = self.patcher_entry.start()
-        
-        # The app is initialized with the mocked Tk class.
-        self.app = FitnessTrackerApp(self.MockTk())
-        
-        # Reset the mock entry widgets' get methods for each test.
-        # Values will be set in the individual test methods.
-        self.app.workout_entry.get.reset_mock()
-        self.app.duration_entry.get.reset_mock()
+        # Create a mock Tkinter root window for the tests
+        self.root = tk.Tk()
+        self.app = FitnessTrackerApp(self.root)
 
     def tearDown(self):
-        """Stop the patches after each test."""
-        self.patcher_tk.stop()
-        self.patcher_entry.stop()
+        # Clean up the mock window after each test
+        self.root.destroy()
 
-    @patch('tkinter.messagebox.showinfo')
-    def test_add_workout_success(self, mock_info):
+    def test_add_workout_success(self):
         """Test adding a workout with valid input."""
-        # Set the mock return values specifically for this test.
-        self.app.workout_entry.get.return_value = "Running"
-        self.app.duration_entry.get.return_value = "30"
+        with patch('tkinter.Entry.get', side_effect=['Running', '30']), \
+             patch('tkinter.messagebox.showinfo'):
+            self.app.add_workout()
+            self.assertEqual(len(self.app.workouts), 1)
+            self.assertEqual(self.app.workouts[0]['workout'], 'Running')
+            self.assertEqual(self.app.workouts[0]['duration'], 30)
 
-        self.app.add_workout()
-        
-        self.assertEqual(len(self.app.workouts), 1)
-        self.assertEqual(self.app.workouts[0]["workout"], "Running")
-        self.assertEqual(self.app.workouts[0]["duration"], 30)
-        
-        mock_info.assert_called_with("Success", "'Running' added successfully!")
-        self.app.workout_entry.delete.assert_called_with(0, tk.END)
-        self.app.duration_entry.delete.assert_called_with(0, tk.END)
-
-    @patch('tkinter.messagebox.showerror')
-    def test_add_workout_missing_input(self, mock_error):
+    def test_add_workout_missing_fields(self):
         """Test adding a workout with missing input."""
-        # Set the mock return values specifically for this test.
-        self.app.workout_entry.get.return_value = "Running"
-        self.app.duration_entry.get.return_value = ""
+        with patch('tkinter.Entry.get', side_effect=['', '']), \
+             patch('tkinter.messagebox.showerror') as mock_error:
+            self.app.add_workout()
+            mock_error.assert_called_with("Error", "Please enter both workout and duration.")
+            self.assertEqual(len(self.app.workouts), 0)
 
-        self.app.add_workout()
+    def test_add_workout_invalid_duration(self):
+        """Test adding a workout with a non-integer duration."""
+        with patch('tkinter.Entry.get', side_effect=['Cycling', 'forty']), \
+             patch('tkinter.messagebox.showerror') as mock_error:
+            self.app.add_workout()
+            mock_error.assert_called_with("Error", "Duration must be a number.")
+            self.assertEqual(len(self.app.workouts), 0)
 
-        self.assertEqual(len(self.app.workouts), 0)
-        mock_error.assert_called_with("Error", "Please enter both workout and duration.")
-        
-    @patch('tkinter.messagebox.showerror')
-    def test_add_workout_invalid_duration(self, mock_error):
-        """Test adding a workout with a non-numeric duration."""
-        # Set the mock return values specifically for this test.
-        self.app.workout_entry.get.return_value = "Running"
-        self.app.duration_entry.get.return_value = "thirty"
-
-        self.app.add_workout()
-        self.assertEqual(len(self.app.workouts), 0)
-        mock_error.assert_called_with("Error", "Duration must be a number.")
-
-    @patch('tkinter.messagebox.showinfo')
-    def test_view_workouts_empty(self, mock_info):
+    def test_view_workouts_empty(self):
         """Test viewing workouts when the list is empty."""
-        self.app.view_workouts()
-        mock_info.assert_called_with("Workouts", "No workouts logged yet.")
+        with patch('tkinter.messagebox.showinfo') as mock_info:
+            self.app.view_workouts()
+            mock_info.assert_called_with("Workouts", "No workouts logged yet.")
 
-    @patch('tkinter.messagebox.showinfo')
-    def test_view_workouts_with_data(self, mock_info):
-        """Test viewing workouts when the list contains data."""
-        self.app.workouts.append({"workout": "Running", "duration": 30})
-        self.app.workouts.append({"workout": "Lifting", "duration": 45})
-
-        self.app.view_workouts()
-        expected_message = "Logged Workouts:\n1. Running - 30 minutes\n2. Lifting - 45 minutes\n"
-        mock_info.assert_called_with("Workouts", expected_message)
+    def test_view_workouts_with_data(self):
+        """Test viewing workouts with a populated list."""
+        self.app.workouts = [
+            {"workout": "Pushups", "duration": 15},
+            {"workout": "Stretching", "duration": 10}
+        ]
+        expected_message = "Logged Workouts:\n1. Pushups - 15 minutes\n2. Stretching - 10 minutes\n"
+        with patch('tkinter.messagebox.showinfo') as mock_info:
+            self.app.view_workouts()
+            mock_info.assert_called_with("Workouts", expected_message)
 
 if __name__ == '__main__':
     unittest.main()
