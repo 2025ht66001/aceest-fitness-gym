@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build ACEest Fitness and Gym application
 
 on:
   push:
@@ -6,25 +6,55 @@ on:
       - main
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Fetch all history for tagging
+
+      - name: Build and Test Docker Image
+        id: build_test
+        run: |
+          # Build a temporary test image
+          docker build -t fitness-tracker-test .
+
+          # Run the tests. If this command fails, the job will stop here.
+          docker run fitness-tracker-test
+
+      - name: Get next version number
+        id: get_version
+        if: success()
+        run: |
+          # Get the current number of tags, which will be our next version
+          # This is a very simple way to generate versions (e.g., v1, v2, v3...)
+          VERSION_NUMBER=$(git tag | wc -l)
+          NEXT_VERSION="v$((VERSION_NUMBER + 1))"
+          echo "Next version: $NEXT_VERSION"
+          echo "::set-output name=tag::${NEXT_VERSION}"
+
+      - name: Tag the Git repository
+        if: success()
+        run: |
+          GIT_TAG=${{ steps.get_version.outputs.tag }}
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git tag $GIT_TAG
+          git push origin $GIT_TAG
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        if: success()
+        uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/fitness-app:latest
+      - name: Build and Push Docker image
+        if: success()
+        run: |
+          IMAGE_TAG=${{ steps.get_version.outputs.tag }}
+          # The final image build, now with the generated tag
+          docker build -t your_dockerhub_username/fitness-tracker:$IMAGE_TAG .
+          docker push your_dockerhub_username/fitness-tracker:$IMAGE_TAG
