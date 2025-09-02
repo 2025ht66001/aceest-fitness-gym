@@ -2,24 +2,25 @@ import tkinter as tk
 import unittest
 from unittest.mock import patch, MagicMock
 
-# Import application class
+# Import your application class
 from ACEest_Fitness import FitnessTrackerApp
 
 class TestFitnessTrackerApp(unittest.TestCase):
     def setUp(self):
         """Set up a mock environment for each test."""
-        # Patch the Tk and Entry classes before the app is instantiated.
         self.patcher_tk = patch('tkinter.Tk')
         self.MockTk = self.patcher_tk.start()
         
         self.patcher_entry = patch('tkinter.Entry')
         self.MockEntry = self.patcher_entry.start()
         
+        # The app is initialized with the mocked Tk class.
         self.app = FitnessTrackerApp(self.MockTk())
         
-        # Now, correctly set the return value on the mocked entry instances.
-        self.app.workout_entry.get.return_value = "Running"
-        self.app.duration_entry.get.return_value = "30"
+        # Reset the mock entry widgets' get methods for each test.
+        # Values will be set in the individual test methods.
+        self.app.workout_entry.get.reset_mock()
+        self.app.duration_entry.get.reset_mock()
 
     def tearDown(self):
         """Stop the patches after each test."""
@@ -29,9 +30,12 @@ class TestFitnessTrackerApp(unittest.TestCase):
     @patch('tkinter.messagebox.showinfo')
     def test_add_workout_success(self, mock_info):
         """Test adding a workout with valid input."""
-        # The return values are set in setUp, so we just call the method.
-        self.app.add_workout()
+        # Set the mock return values specifically for this test.
+        self.app.workout_entry.get.return_value = "Running"
+        self.app.duration_entry.get.return_value = "30"
 
+        self.app.add_workout()
+        
         self.assertEqual(len(self.app.workouts), 1)
         self.assertEqual(self.app.workouts[0]["workout"], "Running")
         self.assertEqual(self.app.workouts[0]["duration"], 30)
@@ -43,8 +47,9 @@ class TestFitnessTrackerApp(unittest.TestCase):
     @patch('tkinter.messagebox.showerror')
     def test_add_workout_missing_input(self, mock_error):
         """Test adding a workout with missing input."""
-        # Override the mock return value for this specific test.
-        self.app.workout_entry.get.return_value = ""
+        # Set the mock return values specifically for this test.
+        self.app.workout_entry.get.return_value = "Running"
+        self.app.duration_entry.get.return_value = ""
 
         self.app.add_workout()
 
@@ -54,7 +59,8 @@ class TestFitnessTrackerApp(unittest.TestCase):
     @patch('tkinter.messagebox.showerror')
     def test_add_workout_invalid_duration(self, mock_error):
         """Test adding a workout with a non-numeric duration."""
-        # Override the mock return value for this specific test.
+        # Set the mock return values specifically for this test.
+        self.app.workout_entry.get.return_value = "Running"
         self.app.duration_entry.get.return_value = "thirty"
 
         self.app.add_workout()
